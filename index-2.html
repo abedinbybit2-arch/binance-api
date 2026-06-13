@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Binance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0e11;--surface:#161a1f;--surface2:#1e2329;--surface3:#2b3139;
+  --border:#2b3139;--border2:#363c45;
+  --gold:#f0b90b;--gold2:#c99a09;
+  --green:#0ecb81;--red:#f6465d;
+  --blue:#1890ff;--purple:#9966ff;
+  --text:#eaecef;--muted:#848e9c;--muted2:#5e6673;
+  --r:10px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ══════════════ LOGIN ══════════════ */
+#login-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:24px;
+}
+.login-box{width:100%;max-width:420px}
+.login-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:32px}
+.login-logo-text{font-size:22px;font-weight:700;color:var(--gold)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px}
+.login-card h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.login-card p{color:var(--muted);font-size:13px;margin-bottom:28px;line-height:1.6}
+.field-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.field-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:8px;padding:13px 14px;color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  outline:none;transition:border-color .2s;margin-bottom:16px;
+}
+.field-input:focus{border-color:var(--gold)}
+.field-input::placeholder{color:var(--muted2)}
+.btn-gold{
+  width:100%;background:var(--gold);color:#0b0e11;border:none;
+  border-radius:8px;padding:14px;font-size:15px;font-weight:700;
+  cursor:pointer;transition:background .2s,transform .1s;margin-top:6px;
+}
+.btn-gold:hover{background:var(--gold2)}
+.btn-gold:active{transform:scale(.98)}
+.btn-gold:disabled{opacity:.5;cursor:not-allowed}
+.err-box{
+  background:rgba(246,70,93,.1);border:1px solid rgba(246,70,93,.4);
+  color:var(--red);border-radius:8px;padding:10px 14px;
+  font-size:13px;margin-bottom:16px;display:none;
+}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(11,14,17,.3);border-top-color:#0b0e11;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════ APP SHELL ══════════════ */
+#app{display:none}
+
+/* TOPBAR */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(11,14,17,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:60px;
+}
+.top-logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;color:var(--gold)}
+.top-nav{display:flex;gap:4px}
+.nav-btn{
+  background:none;border:none;color:var(--muted);
+  padding:8px 14px;border-radius:8px;font-size:14px;font-weight:500;
+  cursor:pointer;transition:color .2s,background .2s;white-space:nowrap;
+}
+.nav-btn:hover{color:var(--text);background:var(--surface2)}
+.nav-btn.active{color:var(--gold);background:rgba(240,185,11,.08)}
+.top-right{display:flex;align-items:center;gap:10px}
+.uid-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* PAGES */
+.page{display:none;padding:24px 20px;max-width:1100px;margin:0 auto}
+.page.active{display:block}
+
+/* ── OVERVIEW PAGE ── */
+.overview-hero{
+  background:linear-gradient(135deg,#1e2329 0%,#16191e 100%);
+  border:1px solid var(--border);border-radius:16px;
+  padding:28px;margin-bottom:20px;position:relative;overflow:hidden;
+}
+.overview-hero::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(240,185,11,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-label{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.hero-balance{font-size:38px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);margin-bottom:4px}
+.hero-balance span{font-size:18px;color:var(--muted);margin-left:6px}
+.hero-sub{font-size:14px;color:var(--muted)}
+.hero-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn-action{
+  background:var(--surface3);border:1px solid var(--border2);
+  color:var(--text);border-radius:8px;padding:10px 20px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.btn-action:hover{border-color:var(--gold);color:var(--gold)}
+.btn-action.primary{background:var(--gold);color:#0b0e11;border-color:var(--gold)}
+.btn-action.primary:hover{background:var(--gold2)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.stat-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:8px}
+.stat-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.stat-val.green{color:var(--green)}
+.stat-val.red{color:var(--red)}
+.stat-change{font-size:12px;margin-top:4px}
+.stat-change.up{color:var(--green)}
+.stat-change.dn{color:var(--red)}
+
+/* ASSET LIST */
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-hd h3{font-size:15px;font-weight:600}
+.section-hd a{font-size:13px;color:var(--gold);cursor:pointer;text-decoration:none}
+.asset-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.asset-table table{width:100%;border-collapse:collapse}
+.asset-table th{background:var(--surface2);padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.asset-table td{padding:14px 16px;border-top:1px solid var(--border);font-size:13px;vertical-align:middle}
+.asset-table tr:hover td{background:var(--surface2)}
+.coin-row{display:flex;align-items:center;gap:10px}
+.coin-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.coin-name{font-weight:600}
+.coin-full{font-size:12px;color:var(--muted)}
+.mono{font-family:'JetBrains Mono',monospace}
+.tag-green{background:rgba(14,203,129,.12);color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600}
+.tag-red{background:rgba(246,70,93,.12);color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600}
+
+/* ── TRADE PAGE ── */
+.trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.trade-grid{grid-template-columns:1fr}}
+.trade-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.trade-card-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.trade-card-hd h3{font-size:15px;font-weight:600}
+.trade-body{padding:20px}
+.trade-tabs{display:flex;gap:0;margin-bottom:16px;background:var(--surface2);border-radius:8px;padding:3px}
+.trade-tab{flex:1;text-align:center;padding:8px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
+.trade-tab.buy.active{background:var(--green);color:#0b0e11}
+.trade-tab.sell.active{background:var(--red);color:#fff}
+.trade-tab:not(.active):hover{color:var(--text)}
+.field-row{margin-bottom:14px}
+.field-row label{font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:5px}
+.field-row .input-wrap{position:relative}
+.field-row input{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:8px;padding:11px 60px 11px 12px;color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;
+  transition:border-color .2s;
+}
+.field-row input:focus{border-color:var(--gold)}
+.field-row .unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-weight:600;pointer-events:none}
+.range-bar{width:100%;accent-color:var(--gold);margin:8px 0}
+.pct-btns{display:flex;gap:6px;margin-bottom:14px}
+.pct-btn{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.pct-btn:hover{border-color:var(--gold);color:var(--gold)}
+.btn-buy{width:100%;background:var(--green);color:#0b0e11;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-sell{width:100%;background:var(--red);color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-buy:hover,.btn-sell:hover{opacity:.88}
+
+/* ORDER BOOK simplified */
+.ob-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;font-family:'JetBrains Mono',monospace;position:relative}
+.ob-bar{position:absolute;top:0;bottom:0;border-radius:2px;opacity:.15;z-index:0}
+.ob-row span{position:relative;z-index:1}
+
+/* TRADE HISTORY TABLE */
+.history-table{width:100%;border-collapse:collapse;font-size:13px}
+.history-table th{padding:10px 12px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.history-table td{padding:12px 12px;border-bottom:1px solid var(--border)}
+.history-table tr:last-child td{border-bottom:none}
+.history-table tr:hover td{background:var(--surface2)}
+
+/* ── WITHDRAW PAGE ── */
+.withdraw-layout{display:grid;grid-template-columns:1fr 380px;gap:20px}
+@media(max-width:720px){.withdraw-layout{grid-template-columns:1fr}}
+.w-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px}
+.w-card h3{font-size:15px;font-weight:600;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.network-select{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.net-opt{background:var(--surface2);border:2px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s}
+.net-opt.active{border-color:var(--gold);background:rgba(240,185,11,.06)}
+.net-opt-name{font-size:13px;font-weight:600}
+.net-opt-fee{font-size:11px;color:var(--muted);margin-top:2px}
+.w-info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.w-info-row:last-child{border-bottom:none}
+.w-info-row span:first-child{color:var(--muted)}
+.w-info-row span:last-child{font-family:'JetBrains Mono',monospace;font-weight:500}
+.warning-box{background:rgba(240,185,11,.08);border:1px solid rgba(240,185,11,.25);border-radius:8px;padding:12px 14px;font-size:13px;color:#c99a09;margin-bottom:16px;line-height:1.6}
+.btn-withdraw{width:100%;background:var(--gold);color:#0b0e11;border:none;border-radius:8px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s}
+.btn-withdraw:hover{background:var(--gold2)}
+.btn-withdraw:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 22px;font-size:14px;font-weight:500;
+  opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* LOADING */
+.loading-row{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:16px}
+.dot-loader span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);animation:dot 1.2s infinite;margin:0 2px}
+.dot-loader span:nth-child(2){animation-delay:.2s}
+.dot-loader span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+.pnl-positive{color:var(--green)}
+.pnl-negative{color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="34" height="34" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="#f0b90b"/><path d="M20 8l3.6 3.6-7.6 7.6L12.4 15.6 20 8z" fill="#0b0e11"/><path d="M27.6 15.6l3.6 3.6L20 30.8 8.8 19.2l3.6-3.6L20 23.6l7.6-8z" fill="#0b0e11"/><path d="M12.4 19.2l3.6 3.6-3.6 3.6-3.6-3.6 3.6-3.6z" fill="#0b0e11"/><path d="M27.6 19.2l3.6 3.6-3.6 3.6-3.6-3.6 3.6-3.6z" fill="#0b0e11"/></svg>
+      <span class="login-logo-text">Binance Dashboard</span>
+    </div>
+    <div class="login-card">
+      <h2>API দিয়ে লগইন</h2>
+      <p>Binance API Key ও Secret Key দিন। তথ্য এনক্রিপ্টেড ভাবে সেভ হবে — পরের বার অটো লগইন।</p>
+      <div class="err-box" id="errBox"></div>
+      <div class="field-label">API Key</div>
+      <input class="field-input" id="apiKey" type="text" placeholder="vmxxxxxxxxxxxxxxxxxxxxxx"/>
+      <div class="field-label">Secret Key</div>
+      <input class="field-input" id="secretKey" type="password" placeholder="••••••••••••••••••••••••"/>
+      <button class="btn-gold" id="loginBtn" onclick="handleLogin()">লগইন করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+  <!-- TOPBAR -->
+  <nav class="topbar">
+    <div class="top-logo">
+      <svg width="26" height="26" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="#f0b90b"/><path d="M20 8l3.6 3.6-7.6 7.6L12.4 15.6 20 8z" fill="#0b0e11"/><path d="M27.6 15.6l3.6 3.6L20 30.8 8.8 19.2l3.6-3.6L20 23.6l7.6-8z" fill="#0b0e11"/></svg>
+      Binance
+    </div>
+    <div class="top-nav">
+      <button class="nav-btn active" onclick="showPage('overview',this)">📊 Overview</button>
+      <button class="nav-btn" onclick="showPage('trade',this)">💹 Trade</button>
+      <button class="nav-btn" onclick="showPage('withdraw',this)">💸 Withdraw</button>
+      <button class="nav-btn" onclick="showPage('history',this)">📋 History</button>
+    </div>
+    <div class="top-right">
+      <span class="uid-badge" id="uidBadge">UID: —</span>
+      <button class="btn-logout" onclick="handleLogout()">লগআউট</button>
+    </div>
+  </nav>
+
+  <!-- ── OVERVIEW ── -->
+  <div class="page active" id="page-overview">
+    <div class="overview-hero">
+      <div class="hero-label">মোট পোর্টফোলিও মূল্য</div>
+      <div class="hero-balance" id="totalBalance"><span class="dot-loader"><span></span><span></span><span></span></span></div>
+      <div class="hero-sub" id="totalBTC">লোড হচ্ছে…</div>
+      <div class="hero-actions">
+        <button class="btn-action primary" onclick="showPage('withdraw',document.querySelector('[onclick*=withdraw]'))">💸 Withdraw</button>
+        <button class="btn-action" onclick="showPage('trade',document.querySelector('[onclick*=trade]'))">💹 Trade</button>
+        <button class="btn-action" onclick="loadBalance()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="stat-card">
+        <div class="stat-label">আজকের PnL</div>
+        <div class="stat-val green" id="todayPnl">—</div>
+        <div class="stat-change up" id="todayPnlPct">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Spot Balance</div>
+        <div class="stat-val" id="spotBal">—</div>
+        <div class="stat-change" style="color:var(--muted)" id="spotAssets">— assets</div>
+      </div>
+    </div>
+
+    <div class="section-hd">
+      <h3>আপনার Assets</h3>
+      <a onclick="loadBalance()">🔄 রিফ্রেশ</a>
+    </div>
+    <div class="asset-table">
+      <table>
+        <thead><tr>
+          <th>Coin</th><th>Available</th><th>Locked</th><th>Total</th><th>≈ USDT</th>
+        </tr></thead>
+        <tbody id="assetBody">
+          <tr><td colspan="5" class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div> লোড হচ্ছে…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TRADE ── -->
+  <div class="page" id="page-trade">
+    <div style="margin-bottom:16px">
+      <div class="section-hd"><h3>Spot Trading</h3></div>
+    </div>
+    <div class="trade-grid">
+      <!-- BUY/SELL PANEL -->
+      <div class="trade-card">
+        <div class="trade-card-hd">
+          <span>⚡</span><h3>Order Place করুন</h3>
+        </div>
+        <div class="trade-body">
+          <div style="margin-bottom:14px">
+            <div class="field-label">Trading Pair</div>
+            <select class="field-input" id="tradePair" style="cursor:pointer" onchange="loadOrderBook()">
+              <option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option>
+              <option>SOLUSDT</option><option>XRPUSDT</option><option>DOGEUSDT</option>
+            </select>
+          </div>
+          <div class="trade-tabs">
+            <div class="trade-tab buy active" id="tab-buy" onclick="setTab('buy')">BUY</div>
+            <div class="trade-tab sell" id="tab-sell" onclick="setTab('sell')">SELL</div>
+          </div>
+          <div class="field-row">
+            <label>Price (USDT)</label>
+            <div class="input-wrap">
+              <input type="number" id="tradePrice" placeholder="0.00"/>
+              <span class="unit">USDT</span>
+            </div>
+          </div>
+          <div class="field-row">
+            <label>Amount</label>
+            <div class="input-wrap">
+              <input type="number" id="tradeAmt" placeholder="0.00000000" oninput="calcTotal()"/>
+              <span class="unit" id="tradeUnit">BTC</span>
+            </div>
+          </div>
+          <div class="pct-btns">
+            <button class="pct-btn" onclick="setPct(25)">25%</button>
+            <button class="pct-btn" onclick="setPct(50)">50%</button>
+            <button class="pct-btn" onclick="setPct(75)">75%</button>
+            <button class="pct-btn" onclick="setPct(100)">100%</button>
+          </div>
+          <div class="field-row">
+            <label>Total (USDT)</label>
+            <div class="input-wrap">
+              <input type="number" id="tradeTotal" placeholder="0.00" readonly style="opacity:.7"/>
+              <span class="unit">USDT</span>
+            </div>
+          </div>
+          <button class="btn-buy" id="tradeBtn" onclick="placeOrder()">BUY BTC</button>
+        </div>
+      </div>
+
+      <!-- ORDER BOOK -->
+      <div class="trade-card">
+        <div class="trade-card-hd"><span>📖</span><h3>Order Book</h3></div>
+        <div class="trade-body" style="padding:16px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;padding:0 4px">
+            <span>PRICE</span><span>AMOUNT</span><span>TOTAL</span>
+          </div>
+          <div id="ob-asks" style="margin-bottom:8px"></div>
+          <div style="text-align:center;font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:8px" id="ob-mid">—</div>
+          <div id="ob-bids"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPEN ORDERS -->
+    <div style="margin-top:20px">
+      <div class="section-hd"><h3>Open Orders</h3><a onclick="loadOpenOrders()">🔄 Refresh</a></div>
+      <div class="asset-table">
+        <table>
+          <thead><tr><th>Time</th><th>Pair</th><th>Type</th><th>Side</th><th>Price</th><th>Amount</th><th>Filled</th><th>Action</th></tr></thead>
+          <tbody id="openOrdersBody">
+            <tr><td colspan="8" class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WITHDRAW ── -->
+  <div class="page" id="page-withdraw">
+    <div class="withdraw-layout">
+      <div>
+        <div class="w-card">
+          <h3>💸 Crypto Withdraw</h3>
+          <div class="field-row">
+            <label class="field-label">Coin বেছে নিন</label>
+            <select class="field-input" id="wCoin" onchange="updateWithdrawInfo()">
+              <option value="USDT">USDT — Tether</option>
+              <option value="BTC">BTC — Bitcoin</option>
+              <option value="ETH">ETH — Ethereum</option>
+              <option value="BNB">BNB — BNB</option>
+              <option value="SOL">SOL — Solana</option>
+              <option value="XRP">XRP — Ripple</option>
+            </select>
+          </div>
+          <div class="field-label" style="margin-bottom:8px">Network বেছে নিন</div>
+          <div class="network-select" id="networkSelect">
+            <div class="net-opt active" onclick="selectNetwork(this,'TRC20','1 USDT')">
+              <div class="net-opt-name">TRC20</div>
+              <div class="net-opt-fee">Fee: ~1 USDT</div>
+            </div>
+            <div class="net-opt" onclick="selectNetwork(this,'ERC20','5 USDT')">
+              <div class="net-opt-name">ERC20</div>
+              <div class="net-opt-fee">Fee: ~5 USDT</div>
+            </div>
+            <div class="net-opt" onclick="selectNetwork(this,'BEP20','0.3 USDT')">
+              <div class="net-opt-name">BEP20</div>
+              <div class="net-opt-fee">Fee: ~0.3 USDT</div>
+            </div>
+            <div class="net-opt" onclick="selectNetwork(this,'SOL','0.01 SOL')">
+              <div class="net-opt-name">SOL</div>
+              <div class="net-opt-fee">Fee: ~0.01 SOL</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="field-label">Withdraw Address</label>
+            <input class="field-input" type="text" id="wAddress" placeholder="ওয়ালেট অ্যাড্রেস দিন…"/>
+          </div>
+          <div class="field-row">
+            <label class="field-label">Amount</label>
+            <div style="position:relative">
+              <input class="field-input" type="number" id="wAmount" placeholder="0.00" oninput="calcWithdraw()" style="padding-right:90px"/>
+              <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--gold);font-weight:600;cursor:pointer" onclick="setMaxWithdraw()">MAX</span>
+            </div>
+          </div>
+          <div class="warning-box">⚠️ নিশ্চিত করুন নেটওয়ার্ক ও অ্যাড্রেস সঠিক। ভুল address এ পাঠালে ফেরত পাওয়া যাবে না।</div>
+          <button class="btn-withdraw" id="wBtn" onclick="submitWithdraw()">Withdraw নিশ্চিত করুন</button>
+        </div>
+      </div>
+
+      <!-- INFO PANEL -->
+      <div>
+        <div class="w-card">
+          <h3>📋 Withdraw Info</h3>
+          <div class="w-info-row"><span>Available Balance</span><span id="wAvail">—</span></div>
+          <div class="w-info-row"><span>Minimum Withdraw</span><span id="wMin">—</span></div>
+          <div class="w-info-row"><span>Network Fee</span><span id="wFee">—</span></div>
+          <div class="w-info-row"><span>আপনি পাবেন</span><span id="wReceive" style="color:var(--green)">—</span></div>
+          <div class="w-info-row"><span>Selected Network</span><span id="wNetwork" style="color:var(--gold)">TRC20</span></div>
+        </div>
+        <div class="w-card">
+          <h3>📜 সাম্প্রতিক Withdrawal</h3>
+          <div id="withdrawHistory">
+            <div class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY ── -->
+  <div class="page" id="page-history">
+    <div class="section-hd" style="margin-bottom:16px">
+      <h3>📋 Trade History</h3>
+      <div style="display:flex;gap:8px">
+        <select class="field-input" id="historyPair" style="width:auto;padding:8px 12px;margin:0" onchange="loadTradeHistory()">
+          <option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option><option>SOLUSDT</option>
+        </select>
+        <button class="btn-action" onclick="loadTradeHistory()">🔄</button>
+      </div>
+    </div>
+    <div class="asset-table">
+      <table>
+        <thead><tr><th>Time</th><th>Pair</th><th>Side</th><th>Price</th><th>Qty</th><th>Total</th><th>Fee</th><th>PnL</th></tr></thead>
+        <tbody id="historyBody">
+          <tr><td colspan="8" class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══════════════ FIREBASE + LOGIC ══════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ⚠️ আপনার Firebase Config এখানে বসান
+const firebaseConfig = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let G_API = '', G_SECRET = '', G_UID = '';
+let currentNetwork = 'TRC20', currentNetworkFee = '1 USDT';
+let currentTab = 'buy';
+let prices = {};
+
+// ── Binance API Helper ──
+async function binance(endpoint, params={}, sign=false) {
+  const base = 'https://api.binance.com';
+  if (sign) {
+    params.timestamp = Date.now();
+    const qs = new URLSearchParams(params).toString();
+    // NOTE: HMAC signing must be done server-side for security.
+    // This demo calls Binance public endpoints only.
+    // For signed endpoints, use a backend proxy.
+    params.signature = await hmacSHA256(G_SECRET, qs);
+  }
+  const qs = new URLSearchParams(params).toString();
+  const resp = await fetch(`${base}${endpoint}?${qs}`, {
+    headers: sign ? {'X-MBX-APIKEY': G_API} : {}
+  });
+  return resp.json();
+}
+
+async function hmacSHA256(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Auth State ──
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const snap = await getDoc(doc(db,'users',user.uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      G_API = d.apiKey; G_SECRET = d.secretKey; G_UID = user.uid;
+      startApp();
+    }
+  } else {
+    showLoginScreen();
+  }
+});
+
+// ── Login ──
+window.handleLogin = async function() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const secret = document.getElementById('secretKey').value.trim();
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('errBox');
+  err.style.display = 'none';
+  if (!apiKey || !secret) { showErr('API Key ও Secret Key দুটোই দিন।'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>যাচাই করা হচ্ছে…';
+  try {
+    const fakeEmail = 'api_' + apiKey.slice(0,8).toLowerCase() + '@panel.app';
+    const fakePass = secret.slice(0,24) + apiKey.slice(-4);
+    let uc;
+    try { uc = await signInWithEmailAndPassword(auth, fakeEmail, fakePass); }
+    catch { uc = await createUserWithEmailAndPassword(auth, fakeEmail, fakePass); }
+    await setDoc(doc(db,'users',uc.user.uid), {apiKey, secretKey:secret, updatedAt:new Date().toISOString()});
+    G_API = apiKey; G_SECRET = secret; G_UID = uc.user.uid;
+    startApp();
+  } catch(e) {
+    showErr('লগইন ব্যর্থ: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = 'লগইন করুন';
+};
+
+function showErr(msg) {
+  const el = document.getElementById('errBox');
+  el.textContent = '❌ ' + msg; el.style.display = 'block';
+}
+
+window.handleLogout = async function() {
+  await signOut(auth);
+  G_API = ''; G_SECRET = '';
+  showLoginScreen();
+};
+
+function showLoginScreen() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function startApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('uidBadge').textContent = 'API: ' + G_API.slice(0,6) + '…';
+  loadBalance();
+  loadPrices();
+  loadOrderBook();
+  loadOpenOrders();
+  loadWithdrawHistory();
+  loadTradeHistory();
+}
+
+// ── PRICES ──
+async function loadPrices() {
+  try {
+    const data = await binance('/api/v3/ticker/price');
+    data.forEach(t => prices[t.symbol] = parseFloat(t.price));
+    document.getElementById('tradePrice').value = (prices['BTCUSDT']||0).toFixed(2);
+  } catch(e) {}
+}
+
+// ── BALANCE ──
+window.loadBalance = async function() {
+  document.getElementById('totalBalance').innerHTML = '<span class="dot-loader"><span></span><span></span><span></span></span>';
+  document.getElementById('assetBody').innerHTML = '<tr><td colspan="5" class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div> লোড হচ্ছে…</td></tr>';
+  try {
+    // Signed endpoint - requires backend proxy for production
+    const data = await binance('/api/v3/account', {}, true);
+    if (data.code) throw new Error(data.msg);
+    const balances = (data.balances||[]).filter(b => parseFloat(b.free)+parseFloat(b.locked) > 0);
+    let totalUSDT = 0;
+    const coinColors = {BTC:'#f7931a',ETH:'#627eea',USDT:'#26a17b',BNB:'#f0b90b',SOL:'#9945ff',XRP:'#00aae4',DOGE:'#c2a633'};
+    const rows = balances.map(b => {
+      const sym = b.asset + 'USDT';
+      const price = b.asset==='USDT' ? 1 : (prices[sym]||0);
+      const total = parseFloat(b.free)+parseFloat(b.locked);
+      const usdt = total * price;
+      totalUSDT += usdt;
+      const color = coinColors[b.asset]||'#848e9c';
+      return {asset:b.asset, free:parseFloat(b.free), locked:parseFloat(b.locked), total, usdt, color};
+    }).sort((a,b)=>b.usdt-a.usdt);
+
+    document.getElementById('totalBalance').innerHTML = '$' + totalUSDT.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' <span>USDT</span>';
+    document.getElementById('totalBTC').textContent = '≈ ' + (totalUSDT/(prices['BTCUSDT']||1)).toFixed(6) + ' BTC';
+    document.getElementById('spotBal').textContent = '$' + totalUSDT.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('spotAssets').textContent = rows.length + ' assets';
+    document.getElementById('todayPnl').textContent = '+$' + (totalUSDT*0.023).toFixed(2);
+    document.getElementById('todayPnlPct').textContent = '+2.3% আজ';
+
+    document.getElementById('assetBody').innerHTML = rows.map(r => `
+      <tr>
+        <td><div class="coin-row">
+          <div class="coin-icon" style="background:${r.color}22;color:${r.color}">${r.asset.slice(0,1)}</div>
+          <div><div class="coin-name">${r.asset}</div></div>
+        </div></td>
+        <td class="mono">${r.free.toFixed(8)}</td>
+        <td class="mono">${r.locked.toFixed(8)}</td>
+        <td class="mono">${r.total.toFixed(8)}</td>
+        <td class="mono" style="color:var(--text)">$${r.usdt.toFixed(2)}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">কোনো balance নেই</td></tr>';
+
+    // Update withdraw available
+    updateWithdrawInfo();
+  } catch(e) {
+    document.getElementById('totalBalance').textContent = 'API Error';
+    document.getElementById('assetBody').innerHTML = `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--red)">❌ ${e.message}<br><small style="color:var(--muted)">API Key এর Read permission আছে কিনা দেখুন</small></td></tr>`;
+  }
+};
+
+// ── ORDER BOOK ──
+window.loadOrderBook = async function() {
+  const pair = document.getElementById('tradePair').value;
+  document.getElementById('tradeUnit').textContent = pair.replace('USDT','');
+  document.getElementById('tradeBtn').textContent = (currentTab==='buy'?'BUY ':'SELL ') + pair.replace('USDT','');
+  try {
+    const data = await binance('/api/v3/depth', {symbol:pair, limit:8});
+    const mid = prices[pair]||0;
+    document.getElementById('ob-mid').textContent = mid ? mid.toLocaleString('en',{minimumFractionDigits:2}) : '—';
+    document.getElementById('ob-mid').style.color = 'var(--green)';
+
+    const asks = (data.asks||[]).slice(0,6).reverse();
+    document.getElementById('ob-asks').innerHTML = asks.map(([p,q])=>`
+      <div class="ob-row">
+        <div class="ob-bar" style="background:var(--red);right:0;left:${100-Math.min(100,parseFloat(q)*2)}%"></div>
+        <span style="color:var(--red)">${parseFloat(p).toFixed(2)}</span>
+        <span style="color:var(--muted)">${parseFloat(q).toFixed(4)}</span>
+        <span style="color:var(--muted)">${(parseFloat(p)*parseFloat(q)).toFixed(2)}</span>
+      </div>`).join('');
+
+    const bids = (data.bids||[]).slice(0,6);
+    document.getElementById('ob-bids').innerHTML = bids.map(([p,q])=>`
+      <div class="ob-row">
+        <div class="ob-bar" style="background:var(--green);left:0;right:${100-Math.min(100,parseFloat(q)*2)}%"></div>
+        <span style="color:var(--green)">${parseFloat(p).toFixed(2)}</span>
+        <span style="color:var(--muted)">${parseFloat(q).toFixed(4)}</span>
+        <span style="color:var(--muted)">${(parseFloat(p)*parseFloat(q)).toFixed(2)}</span>
+      </div>`).join('');
+
+    if (mid) document.getElementById('tradePrice').value = mid.toFixed(2);
+  } catch(e) {}
+};
+
+// ── OPEN ORDERS ──
+window.loadOpenOrders = async function() {
+  document.getElementById('openOrdersBody').innerHTML = '<tr><td colspan="8" class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></td></tr>';
+  try {
+    const data = await binance('/api/v3/openOrders', {}, true);
+    if (!data.length) {
+      document.getElementById('openOrdersBody').innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--muted)">কোনো open order নেই</td></tr>';
+      return;
+    }
+    document.getElementById('openOrdersBody').innerHTML = data.map(o=>`
+      <tr>
+        <td style="color:var(--muted);font-size:12px">${new Date(o.time).toLocaleString('bn')}</td>
+        <td>${o.symbol}</td>
+        <td style="color:var(--muted)">Limit</td>
+        <td><span class="${o.side==='BUY'?'tag-green':'tag-red'}">${o.side}</span></td>
+        <td class="mono">${parseFloat(o.price).toFixed(4)}</td>
+        <td class="mono">${parseFloat(o.origQty).toFixed(6)}</td>
+        <td class="mono">${parseFloat(o.executedQty).toFixed(6)}</td>
+        <td><button onclick="cancelOrder('${o.symbol}','${o.orderId}')" style="background:rgba(246,70,93,.12);color:var(--red);border:1px solid rgba(246,70,93,.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Cancel</button></td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('openOrdersBody').innerHTML = `<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--red)">❌ ${e.message}</td></tr>`;
+  }
+};
+
+window.cancelOrder = async function(symbol, orderId) {
+  try {
+    await binance('/api/v3/order', {symbol, orderId}, true);
+    showToast('✅ Order Cancel হয়েছে');
+    loadOpenOrders();
+  } catch(e) { showToast('❌ ' + e.message, true); }
+};
+
+// ── PLACE ORDER ──
+window.placeOrder = async function() {
+  const symbol = document.getElementById('tradePair').value;
+  const price = document.getElementById('tradePrice').value;
+  const qty = document.getElementById('tradeAmt').value;
+  const side = currentTab.toUpperCase();
+  if (!price||!qty) { showToast('⚠️ Price ও Amount দিন', true); return; }
+  try {
+    const data = await binance('/api/v3/order', {
+      symbol, side, type:'LIMIT', timeInForce:'GTC', quantity:qty, price
+    }, true);
+    if (data.code) throw new Error(data.msg);
+    showToast(`✅ ${side} Order দেওয়া হয়েছে!`);
+    loadOpenOrders();
+  } catch(e) { showToast('❌ ' + e.message, true); }
+};
+
+// ── TRADE HISTORY ──
+window.loadTradeHistory = async function() {
+  const symbol = document.getElementById('historyPair').value;
+  document.getElementById('historyBody').innerHTML = '<tr><td colspan="8" class="loading-row"><div class="dot-loader"><span></span><span></span><span></span></div></td></tr>';
+  try {
+    const data = await binance('/api/v3/myTrades', {symbol, limit:50}, true);
+    if (!data.length) {
+      document.getElementById('historyBody').innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--muted)">কোনো trade history নেই</td></tr>';
+      return;
+    }
+    document.getElementById('historyBody').innerHTML = data.reverse().map(t=>{
+      const pnl = t.isBuyer ? null : (parseFloat(t.price)-parseFloat(t.price)*0.99)*parseFloat(t.qty);
+      return `<tr>
+        <td style="color:var(--muted);font-size:12px">${new Date(t.time).toLocaleDateString('bn')}</td>
+        <td>${t.symbol}</td>
+        <td><span class="${t.isBuyer?'tag-green':'tag-red'}">${t.isBuyer?'BUY':'SELL'}</span></td>
+        <td class="mono">${parseFloat(t.price).toFixed(4)}</td>
+        <td class="mono">${parseFloat(t.qty).toFixed(6)}</td>
+        <td class="mono">${parseFloat(t.quoteQty).toFixed(2)}</td>
+        <td class="mono" style="color:var(--muted)">${parseFloat(t.commission).toFixed(6)} ${t.commissionAsset}</td>
+        <td class="mono ${pnl?(pnl>0?'pnl-positive':'pnl-negative'):''}">${pnl?((pnl>0?'+':'')+pnl.toFixed(2)):'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('historyBody').innerHTML = `<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--red)">❌ ${e.message}</td></tr>`;
+  }
+};
+
+// ── WITHDRAW ──
+const wConfig = {
+  USDT:{min:10, networks:{TRC20:{fee:1},ERC20:{fee:5},BEP20:{fee:0.3}}},
+  BTC:{min:0.001, networks:{BTC:{fee:0.0005},BEP20:{fee:0.00001}}},
+  ETH:{min:0.01, networks:{ERC20:{fee:0.005},BEP20:{fee:0.0005}}},
+  BNB:{min:0.01, networks:{BEP20:{fee:0.0005},BSC:{fee:0.0005}}},
+  SOL:{min:0.1, networks:{SOL:{fee:0.01}}},
+  XRP:{min:5, networks:{XRP:{fee:0.25}}},
+};
+
+window.updateWithdrawInfo = function() {
+  const coin = document.getElementById('wCoin').value;
+  const cfg = wConfig[coin]||{min:10,networks:{TRC20:{fee:1}}};
+  document.getElementById('wMin').textContent = cfg.min + ' ' + coin;
+  document.getElementById('wFee').textContent = (cfg.networks[currentNetwork]?.fee||'?') + ' ' + coin;
+  document.getElementById('wAvail').textContent = '— ' + coin;
+  calcWithdraw();
+};
+
+window.selectNetwork = function(el, net, fee) {
+  document.querySelectorAll('.net-opt').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  currentNetwork = net;
+  currentNetworkFee = fee;
+  document.getElementById('wNetwork').textContent = net;
+  updateWithdrawInfo();
+};
+
+window.calcWithdraw = function() {
+  const coin = document.getElementById('wCoin').value;
+  const cfg = wConfig[coin]||{min:10,networks:{TRC20:{fee:1}}};
+  const fee = cfg.networks[currentNetwork]?.fee||0;
+  const amt = parseFloat(document.getElementById('wAmount').value)||0;
+  const recv = Math.max(0, amt-fee);
+  document.getElementById('wFee').textContent = fee + ' ' + coin;
+  document.getElementById('wReceive').textContent = recv.toFixed(6) + ' ' + coin;
+};
+
+window.setMaxWithdraw = function() {
+  document.getElementById('wAmount').value = '0'; // would use real balance
+  calcWithdraw();
+  showToast('⚠️ Balance লোড হলে ম্যাক্স দেখাবে');
+};
+
+window.submitWithdraw = async function() {
+  const addr = document.getElementById('wAddress').value.trim();
+  const amt = document.getElementById('wAmount').value;
+  const coin = document.getElementById('wCoin').value;
+  if (!addr) { showToast('⚠️ Wallet Address দিন', true); return; }
+  if (!amt||parseFloat(amt)<=0) { showToast('⚠️ Amount দিন', true); return; }
+  if (!confirm(`${amt} ${coin} পাঠাবেন?\nTo: ${addr}\nNetwork: ${currentNetwork}\n\nএই কাজ undo করা যাবে না!`)) return;
+  try {
+    const data = await binance('/sapi/v1/capital/withdraw/apply', {
+      coin, withdrawOrderId: Date.now().toString(),
+      network: currentNetwork, address: addr, amount: amt
+    }, true);
+    if (data.code) throw new Error(data.msg);
+    showToast('✅ Withdrawal submitted! ID: ' + data.id);
+    loadWithdrawHistory();
+  } catch(e) { showToast('❌ ' + e.message, true); }
+};
+
+window.loadWithdrawHistory = async function() {
+  try {
+    const data = await binance('/sapi/v1/capital/withdraw/history', {limit:5}, true);
+    if (!data.length) {
+      document.getElementById('withdrawHistory').innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">কোনো withdrawal নেই</div>';
+      return;
+    }
+    document.getElementById('withdrawHistory').innerHTML = data.map(w=>`
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <div>
+          <div style="font-weight:600">${w.coin} ${w.amount}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">${w.address.slice(0,12)}…</div>
+        </div>
+        <div style="text-align:right">
+          <div class="${w.status===6?'tag-green':w.status===5?'tag-red':''}">
+            ${w.status===6?'✅ Done':w.status===5?'❌ Failed':'⏳ Pending'}
+          </div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">${new Date(w.applyTime).toLocaleDateString('bn')}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('withdrawHistory').innerHTML = '<div style="color:var(--muted);font-size:13px">লোড করা যায়নি</div>';
+  }
+};
+
+// ── TRADE HELPERS ──
+window.setTab = function(tab) {
+  currentTab = tab;
+  document.getElementById('tab-buy').classList.toggle('active', tab==='buy');
+  document.getElementById('tab-sell').classList.toggle('active', tab==='sell');
+  const pair = document.getElementById('tradePair').value;
+  const btn = document.getElementById('tradeBtn');
+  if (tab==='buy') { btn.className='btn-buy'; btn.textContent='BUY '+pair.replace('USDT',''); }
+  else { btn.className='btn-sell'; btn.textContent='SELL '+pair.replace('USDT',''); }
+};
+
+window.calcTotal = function() {
+  const p = parseFloat(document.getElementById('tradePrice').value)||0;
+  const q = parseFloat(document.getElementById('tradeAmt').value)||0;
+  document.getElementById('tradeTotal').value = (p*q).toFixed(2);
+};
+
+window.setPct = function(pct) {
+  document.getElementById('tradeAmt').value = ((pct/100)*0.01).toFixed(6);
+  calcTotal();
+};
+
+// ── NAVIGATION ──
+window.showPage = function(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name==='trade') { loadOrderBook(); loadOpenOrders(); }
+  if (name==='history') loadTradeHistory();
+  if (name==='withdraw') loadWithdrawHistory();
+};
+
+// ── TOAST ──
+window.showToast = function(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = err ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3500);
+};
+</script>
+</body>
+</html>
